@@ -1,6 +1,6 @@
 package IO::Simple;
 
-use 5.000000;
+use 5.006;
 use strict;
 use warnings;
 
@@ -22,10 +22,9 @@ our %EXPORT_TAGS = ( 'all' => [ qw(
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw(
-perl M
 );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Carp;
 
@@ -39,15 +38,15 @@ sub id {
 sub ios {
 	my $file_name = shift;
 	my $mode      = shift || 'r';
-	my $modes = { 'r' => '<',
-				  'w' => '>',
-				  'a' => '>>',
-				  'read' => '<',
-				  'write' => '>',
+	my $modes = { 'r'      => '<',
+				  'w'      => '>',
+				  'a'      => '>>',
+				  'read'   => '<',
+				  'write'  => '>',
 				  'append' => '>>',
 				};
 	if (!exists $modes->{$mode}) {
-		die "Invalid Mode $mode, should be one of " . join(',', keys %$modes);
+		croak "Invalid Mode $mode, should be one of " . join(',', keys %$modes);
 	}
 	open(my $fh, $modes->{$mode}, $file_name) or croak "Opening '$file_name' for '$mode' failed: $!";
 	bless $fh, 'IO::Simple';
@@ -55,6 +54,7 @@ sub ios {
 			file_name => $file_name,
 			mode      => $modes->{$mode},
 			opened	  => 1,
+            autochomp => 1,
 			@_
 	};
 	return $fh;
@@ -70,9 +70,9 @@ sub close {
 sub print {
 	my $self = shift;
 	my $data = $data->{id($self)};
-	croak "File '$data->{file_name}' is not opened." unless $data->{opened};
+	croak "File '$data->{file_name}' is not opened."             unless $data->{opened};
 	croak "File '$data->{file_name}' is not opened for writing." unless $data->{mode} =~ />>|>/;
-	print  $self @_;
+	print  $self @_ or croak "Failed to print to '$data->{file_name}': $!";
 	return $self;
 }
 
@@ -81,12 +81,12 @@ sub say { shift->print(@_, "\n") };
 sub slurp {
 	my $self = shift;
 	my $data = $data->{id($self)};
-	croak "File '$data->{file_name}' is not opened." unless $data->{opened};
+	croak "File '$data->{file_name}' is not opened."             unless $data->{opened};
 	croak "File '$data->{file_name}' is not opened for reading." unless $data->{mode} eq '<';
 	if (wantarray) {
-	   my @lines = <$self>;
-	   chomp(@lines) if $data->{autochomp};
-	   return @lines;
+	    my @lines = <$self>;
+	    chomp(@lines) if $data->{autochomp};
+	    return @lines;
 	} else {
 		local $/;
 		return <$self>;
@@ -115,12 +115,50 @@ IO::Simple - Adds object oriented cabalilities to file handles and provides fata
   $fh->print("This has no new line!!!");  #regular print behavior
   $fh->close();                           #dies on failure
 
+  my $contents = ios('test.txt')->slurp();
+
+
+
 =head1 DESCRIPTION
 
 IO::Simple provides an object orient interface to files as well as dieing on open or close
 errors.  It also provides simple say and slurp methods.
 
-=head2 EXPORT
+=head1 REASONING
+
+This provides an easy way to open a file and create lexical file handle.  It provides error 
+checking on open, print and close as long as you use its methods but with a cleaner error
+than provided by Fatal.  It also provides a quick slurp fucntion, one of those things 
+
+=head1 METHODS
+
+=over 4
+
+=item ios( FILENAME [,MODE, [OPTIONS]])
+
+c<ios> accepts up to three parameters. If only one is supplied then the default mode is 'read'
+The mode can be one of 'r',' 'read', 'w', 'write', 'a', 'append' which translate to '<', '>', 
+and '>>'.  The third parameter is a hash of options.  Currently the only option is 'autochomp'.
+By default autochomp is on, but you can use this to disable it if you prefer.
+which would cause the slurp method to chomp each line in array context.
+
+   my $read  = ios('test');
+   my $write = ios('test', 'w');
+
+   my $not_chomped = ios('test', 'r', autochomp => 0)
+   my @lines       = $not_chomped->slurp();
+
+=item slurp method
+
+c<slurp> returns the remaining contents of the file handle.  If used in array context it
+returns the lines of the file in an array, otherwise it returns the entire file slurped
+into a scalar.  Unless disablled with autochomp, lines return in array context will be chomped.
+
+   my $content = ios('test')->slurp();
+
+=back
+
+=head1 EXPORT
 
 None by default.
 
@@ -130,7 +168,7 @@ IO::All, IO::File
 
 =head1 AUTHOR
 
-Eric Hodges <lt>ericjh@cpan.org<gt>
+Eric Hodges <ericjh@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
