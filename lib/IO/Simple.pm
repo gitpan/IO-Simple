@@ -25,7 +25,7 @@ our @EXPORT = qw(
 perl M
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Carp;
 
@@ -102,49 +102,39 @@ sub DESTROY {
 
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
-
 =head1 NAME
 
-IO::Simple - Perl extension for blah blah blah
+IO::Simple - Adds object oriented cabalilities to file handles and provides fatal handling.
 
 =head1 SYNOPSIS
 
-  use IO::Simple;
-  blah blah blah
+  use IO::Simple ':all';
+  
+  my $fh = ios('test.txt', 'w');          #dies if file can't be opened
+  $fh->say("This is a line");             #say appends new line
+  $fh->print("This has no new line!!!");  #regular print behavior
+  $fh->close();                           #dies on failure
 
 =head1 DESCRIPTION
 
-Stub documentation for IO::Simple, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
-
-Blah blah blah.
+IO::Simple provides an object orient interface to files as well as dieing on open or close
+errors.  It also provides simple say and slurp methods.
 
 =head2 EXPORT
 
 None by default.
 
-
-
 =head1 SEE ALSO
 
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+IO::All, IO::File
 
 =head1 AUTHOR
 
-A. U. Thor, E<lt>a.u.thor@a.galaxy.far.far.awayE<gt>
+Eric Hodges <lt>ericjh@cpan.org<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007 by A. U. Thor
+Copyright (C) 2007 by Eric Hodges
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
